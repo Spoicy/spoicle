@@ -1,7 +1,7 @@
 <template>
   <div>
     <div class="rows">
-      <Row v-for="i in 6" :letters="words[i-1].split('')" :styling="styling[i-1]" />
+      <Row v-for="i in 6" :letters="words[i-1].split('')" :styling="styling[i-1]" :isInvalid="((tryCount + 1 === i) ? wordInvalid : '')" />
     </div>
     <p v-if="tryCount >= 6">The word was: {{ answerWord }}</p>
     <button class="restartButton" @click="restartGame">New game</button>
@@ -21,6 +21,7 @@ export default {
       styling: [[], [],  [], [], [], []],
       letterCounts: {},
       wordList: null,
+      wordInvalid: false,
       solved: false
     }
   },
@@ -29,7 +30,8 @@ export default {
       .then(response => response.text())
       .then(data => {
         this.wordList = data.split('\n');
-        this.answerWord = this.wordList[Math.floor(Math.random() * this.wordList.length)].toUpperCase();
+        this.wordList = this.wordList.map(function (x) { return x.toUpperCase(); })
+        this.answerWord = this.wordList[Math.floor(Math.random() * this.wordList.length)];
       });
   },
   mounted() {
@@ -49,8 +51,15 @@ export default {
       } else if (/^[a-zA-Z]$/.test(e.key) && this.words[this.tryCount].length < 5) {
         this.words[this.tryCount] += e.key.toUpperCase();
       } else if (e.key === 'Enter' && this.words[this.tryCount].length === 5) {
-        this.checkWord(this.words[this.tryCount]);
-        this.tryCount++;
+        if (this.wordList.includes(this.words[this.tryCount])) {
+          this.checkWord(this.words[this.tryCount]);
+          this.tryCount++;
+        } else {
+          this.wordInvalid = true;
+          setTimeout(() => {
+            this.wordInvalid = false;
+          }, 1000)
+        }
       }
     },
     checkWord(word) {
@@ -61,20 +70,20 @@ export default {
           this.letterCounts[this.answerWord[i]]++;
         }
       }
-      if (this.words[this.tryCount] === this.answerWord.toUpperCase()) {
+      if (this.words[this.tryCount] === this.answerWord) {
         this.solved = true;
         for (let i = 0; i < 5; i++) {
           this.styling[this.tryCount][i] = 'green';
         }
       } else {
         for (let i = 0; i < 5; i++) {
-          if (this.words[this.tryCount].substring(i, i+1) == this.answerWord.toUpperCase().substring(i, i+1)) {
+          if (this.words[this.tryCount].substring(i, i+1) == this.answerWord.substring(i, i+1)) {
             this.styling[this.tryCount][i] = 'green';
             this.letterCounts[this.words[this.tryCount][i]]--;
           }
         }
         for (let i = 0; i < 5; i++) {
-          if (this.answerWord.toUpperCase().includes(this.words[this.tryCount][i]) && !this.styling[this.tryCount][i]
+          if (this.answerWord.includes(this.words[this.tryCount][i]) && !this.styling[this.tryCount][i]
               && this.letterCounts[this.words[this.tryCount][i]] > 0) {
             this.styling[this.tryCount][i] = 'yellow';
             this.letterCounts[this.words[this.tryCount][i]]--;
@@ -87,7 +96,7 @@ export default {
       this.letterCounts = {};
     },
     restartGame() {
-      this.answerWord = this.answerWord = this.wordList[Math.floor(Math.random() * this.wordList.length)].toUpperCase();
+      this.answerWord = this.answerWord = this.wordList[Math.floor(Math.random() * this.wordList.length)];
       this.tryCount = 0;
       this.words = ['', '', '', '', '', ''];
       this.styling = [[], [], [], [], [], []];

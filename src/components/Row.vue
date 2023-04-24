@@ -1,5 +1,5 @@
 <template>
-  <div class="row" >
+  <div :class="'row' + (isInvalid ? ' invalid' : '')" >
     <Tile v-for="i in 5" :letter="letters[i - 1]" :class="styling[i - 1]" />
   </div>
 </template>
@@ -8,7 +8,7 @@
 import Tile from './Tile.vue'
 
 export default {
-  props: ['letters', 'styling'],
+  props: ['letters', 'styling', 'isInvalid'],
   components: { Tile }
 }
 </script>
@@ -35,5 +35,11 @@ export default {
     left: 0;
     width: 100%;
     height: 100%;
+  }
+  .invalid {
+    color: red;
+  }
+  .invalid .tile {
+    border: 1px solid red;
   }
 </style>
