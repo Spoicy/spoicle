@@ -5,14 +5,16 @@
     </div>
     <p v-if="tryCount >= 6">The word was: {{ answerWord }}</p>
     <button class="restartButton" @click="restartGame">New game</button>
+    <Keyboard :usedLetters="usedLetters" @keyPress="updateWord"/>
   </div>
 </template>
 
 <script>
 import Row from './Row.vue'
+import Keyboard from './Keyboard.vue'
 
 export default {
-  components: { Row },
+  components: { Row, Keyboard },
   data() {
     return {
       answerWord: '',
@@ -22,6 +24,7 @@ export default {
       letterCounts: {},
       wordList: null,
       wordInvalid: false,
+      usedLetters: [],
       solved: false
     }
   },
@@ -33,16 +36,22 @@ export default {
         this.wordList = this.wordList.map(function (x) { return x.toUpperCase(); })
         this.answerWord = this.wordList[Math.floor(Math.random() * this.wordList.length)];
       });
+    for (let i = 65; i <= 90; i++) {
+      this.usedLetters[String.fromCharCode(i)] = 'white'
+    }
   },
   mounted() {
     document.addEventListener('keyup', this.updateWord);
-    
   },
   beforeUnmount() {
     document.removeEventListener('keyup', this.updateWord);
   },
   methods: {
-    updateWord(e) {
+    updateWord(e, pressedKey) {
+      if (pressedKey) {
+        console.log('test');
+        e = { key: pressedKey };
+      }
       if (this.solved || this.tryCount >= 6) {
         return;
       }
@@ -74,11 +83,13 @@ export default {
         this.solved = true;
         for (let i = 0; i < 5; i++) {
           this.styling[this.tryCount][i] = 'green';
+          this.markKey(this.words[this.tryCount][i], 'green');
         }
       } else {
         for (let i = 0; i < 5; i++) {
           if (this.words[this.tryCount].substring(i, i+1) == this.answerWord.substring(i, i+1)) {
             this.styling[this.tryCount][i] = 'green';
+            this.markKey(this.words[this.tryCount][i], 'green');
             this.letterCounts[this.words[this.tryCount][i]]--;
           }
         }
@@ -86,9 +97,11 @@ export default {
           if (this.answerWord.includes(this.words[this.tryCount][i]) && !this.styling[this.tryCount][i]
               && this.letterCounts[this.words[this.tryCount][i]] > 0) {
             this.styling[this.tryCount][i] = 'yellow';
+            this.markKey(this.words[this.tryCount][i], 'yellow');
             this.letterCounts[this.words[this.tryCount][i]]--;
           } else if (!this.styling[this.tryCount][i]) {
             this.styling[this.tryCount][i] = 'gray'
+            this.markKey(this.words[this.tryCount][i], 'gray');
           }
         }
       }
@@ -101,7 +114,19 @@ export default {
       this.words = ['', '', '', '', '', ''];
       this.styling = [[], [], [], [], [], []];
       this.letterCounts = {};
+      for (let i = 65; i <= 90; i++) {
+        this.usedLetters[String.fromCharCode(i)] = 'white';
+      }
       this.solved = false;
+    },
+    markKey(key, state) {
+      if (this.usedLetters[key] == 'green' || (this.usedLetters[key] !== 'gray' && state === 'gray') || state === 'white') {
+        return;
+      }
+      this.usedLetters[key] = state;
+    },
+    testMethod(e, pressedKey) {
+      console.log(e, pressedKey);
     }
   },
 }
